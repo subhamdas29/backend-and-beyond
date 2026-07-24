@@ -14,7 +14,7 @@ Here, I aggregate practical notes, architecture snippets, key concepts, and less
 
 ---
 
-## Useful for
+## Useful for:
 - Backend Developers switching to Full-Stack
 - Backend Developers
 - Full-Stack Developers
