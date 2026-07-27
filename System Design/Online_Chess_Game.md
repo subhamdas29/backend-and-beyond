@@ -1,7 +1,7 @@
 # Real-Time Online Chess Platform: System Architecture & Design Document
 **Author:** Principal Staff Systems Architect  
 **Status:** Approved for Technical Implementation  
-**Version:** 1.0.1 (GitHub Markdown & KaTeX Rendering Compliant)  
+**Version:** 1.0.2 (100% GitHub KaTeX & Markdown Compliant)  
 
 ---
 
@@ -224,19 +224,19 @@ Clients **never dictate clock time remaining**. All clocks are computed authorit
 
 #### Clock Calculation Formula:
 
-When Player $P$ plays move $M_i$ at client timestamp $T_{\text{client\_send}}$, received by server at $T_{\text{server\_recv}}$:
+When Player $P$ plays move $M_i$ at client timestamp $T_{\text{client}}$, received by server at $T_{\text{server}}$:
 
 $$\text{Estimated RTT} = \text{Client-Server Ping RTT}$$
 
 $$\text{Network One-Way Delay (OWD)} = \frac{\text{RTT}}{2}$$
 
-$$\text{Client Lag} = \max\left(0, T_{\text{server\_recv}} - T_{\text{last\_move\_server\_time}} - \text{Client Clock Elapsed}\right)$$
+$$\text{Client Lag} = \max\left(0, T_{\text{server}} - T_{\text{last-move}} - \text{Client Clock Elapsed}\right)$$
 
 To prevent client lag spoofing (e.g., artificially delaying packets to gain free thinking time), lag compensation is capped:
 
-$$\text{Applied Lag Compensation} = \min\left(\text{Client Lag}, \text{MAX\_LAG\_COMPENSATION}\right) \quad (\text{where } \text{MAX\_LAG\_COMPENSATION} = 250\text{ms})$$
+$$\text{Applied Lag Compensation} = \min\left(\text{Client Lag}, \text{MAX-LAG-COMPENSATION}\right) \quad (\text{where MAX-LAG-COMPENSATION} = 250\text{ms})$$
 
-$$\text{Time Spent on Move} = (T_{\text{server\_recv}} - T_{\text{last\_move\_server\_time}}) - \text{Applied Lag Compensation}$$
+$$\text{Time Spent on Move} = (T_{\text{server}} - T_{\text{last-move}}) - \text{Applied Lag Compensation}$$
 
 $$\text{Clock}_{\text{remaining}}(P) = \text{Clock}_{\text{previous}}(P) - \text{Time Spent on Move} + \text{Increment}$$
 
@@ -432,10 +432,10 @@ flowchart LR
 
 To balance **match quality** (close ELO ratings) vs. **wait time**, the acceptable rating delta $\Delta ELO$ expands dynamically over time $t$:
 
-$$\Delta ELO(t) = \text{Base\_Delta} + \alpha \cdot (t_{\text{current}} - t_{\text{joined}})^{\beta}$$
+$$\Delta ELO(t) = \text{Base-Delta} + \alpha \cdot (t_{\text{current}} - t_{\text{joined}})^{\beta}$$
 
 Where:
-- $\text{Base\_Delta} = 50$ ELO points.
+- $\text{Base-Delta} = 50$ ELO points.
 - $\alpha = 15$ ELO points per second.
 - $\beta = 1.2$ (Super-linear expansion after 10 seconds).
 
@@ -497,7 +497,7 @@ Relying on client-side timer callbacks to announce time-outs is insecure. The se
 Each Game Engine Node operates an in-memory **Hierarchical Timing Wheel** (or priority queue) with millisecond precision:
 1. When a player completes their move, the active timer for that game is canceled.
 2. The exact remaining time for the opponent $T_{\text{remaining}}$ is calculated.
-3. A scheduled callback task is placed in the Timing Wheel set to trigger at $T_{\text{deadline}} = \text{Now}() + T_{\text{remaining}} + \text{MAX\_LAG\_COMPENSATION}$.
+3. A scheduled callback task is placed in the Timing Wheel set to trigger at $T_{\text{deadline}} = \text{Now}() + T_{\text{remaining}} + \text{MAX-LAG-COMPENSATION}$.
 4. If no valid move frame arrives from the opponent before $T_{\text{deadline}}$, the Timing Wheel fires an authoritative `FLAG_TIMEOUT` event, ending the game immediately and notifying both clients.
 
 ### 6.2 Million-Connection Scaling Strategy
