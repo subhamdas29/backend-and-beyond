@@ -1,7 +1,4 @@
 # Real-Time Online Chess Platform: System Architecture & Design Document
-**Author:** Principal Staff Systems Architect  
-**Status:** Approved for Technical Implementation  
-**Version:** 1.0.2 (100% GitHub KaTeX & Markdown Compliant)  
 
 ---
 
