@@ -8,7 +8,7 @@ Here, I aggregate practical notes, architecture snippets, key concepts, and less
 
 ## About This Repository
 
-- **Content Source:** Built using a combination of my own hands-on experience, real-world project learnings, and synthesized insights generated with AI assistance (Claude).
+- **Content Source:** Built using a combination of my own hands-on experience, real-world project learnings, and synthesized insights generated with AI assistance (Claude and Gemini).
 - **Purpose:** A quick-reference playbook for developers with a strong backend background looking to bridge the gap into full-stack development.
 - **Topics Covered:** enough HTML and CSS for backend developers, JavaScript DOM manipulation
 
@@ -18,6 +18,7 @@ Here, I aggregate practical notes, architecture snippets, key concepts, and less
 - Backend Developers switching to Full-Stack
 - Backend Developers
 - Full-Stack Developers
+- Systems Architect
   
 ---
 
