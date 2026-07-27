@@ -1,7 +1,7 @@
 # Real-Time Online Chess Platform: System Architecture & Design Document
 **Author:** Principal Staff Systems Architect  
 **Status:** Approved for Technical Implementation  
-**Version:** 1.0.0  
+**Version:** 1.0.1 (GitHub Markdown & KaTeX Rendering Compliant)  
 
 ---
 
@@ -24,53 +24,53 @@ flowchart TB
         M1["Mobile (iOS / Android)"]
     end
 
-    subgraph Edge Layer
+    subgraph EdgeLayer["Edge Layer"]
         LB["Cloud Load Balancer (L4 TLS Pass-Through / L7)"]
         GW1["WebSocket Gateway Tier (Go / epoll)"]
         GW2["WebSocket Gateway Tier (Go / epoll)"]
     end
 
-    subgraph Messaging & Bus Layer
+    subgraph MessagingLayer["Messaging & Bus Layer"]
         PubSub["NATS / Redis Cluster Pub-Sub (Internal Bus)"]
         Kafka["Apache Kafka Event Log (Game Events, Telemetry)"]
     end
 
-    subgraph Stateful Game Execution Layer
+    subgraph StatefulLayer["Stateful Game Execution Layer"]
         GS1["Game Engine Cluster Node 1 (Actor Shard)"]
         GS2["Game Engine Cluster Node 2 (Actor Shard)"]
     end
 
-    subgraph Stateless Core Services
+    subgraph StatelessLayer["Stateless Core Services"]
         MM["Matchmaking Service (Go)"]
         UserSvc["User & ELO Service (Go / gRPC)"]
         HistSvc["Game History & PGN Ingestion Service"]
     end
 
-    subgraph Data & Storage Layer
-        RedisCache[("Redis Cluster\n(Session, Matchmaking Pools, Game Cache)")]
-        DB[("PostgreSQL Cluster\n(Users, ELO Ratings, Game Metadata)")]
-        BlobStore[("Object Store (S3/GCS)\n(Compressed PGN Archives)")]
+    subgraph StorageLayer["Data & Storage Layer"]
+        RedisCache[("Redis Cluster<br/>(Session, Matchmaking Pools, Game Cache)")]
+        DB[("PostgreSQL Cluster<br/>(Users, ELO Ratings, Game Metadata)")]
+        BlobStore[("Object Store (S3/GCS)<br/>(Compressed PGN Archives)")]
     end
 
-    Clients <-->|WebSocket WSS / HTTP/3| LB
+    Clients <-->|"WebSocket WSS / HTTP/3"| LB
     LB <--> GW1
     LB <--> GW2
 
-    GW1 <-->|gRPC / Internal WS| PubSub
-    GW2 <-->|gRPC / Internal WS| PubSub
+    GW1 <-->|"gRPC / Internal WS"| PubSub
+    GW2 <-->|"gRPC / Internal WS"| PubSub
 
     PubSub <--> GS1
     PubSub <--> GS2
 
-    GW1 -->|REST / gRPC| MM
-    GW2 -->|REST / gRPC| MM
-    MM <-->|ZADD / ZRANGEBYSCORE| RedisCache
+    GW1 -->|"REST / gRPC"| MM
+    GW2 -->|"REST / gRPC"| MM
+    MM <-->|"ZADD / ZRANGEBYSCORE"| RedisCache
 
-    GS1 -->|State Write-Through| RedisCache
-    GS2 -->|State Write-Through| RedisCache
+    GS1 -->|"State Write-Through"| RedisCache
+    GS2 -->|"State Write-Through"| RedisCache
 
-    GS1 -->|Async Game Complete| Kafka
-    GS2 -->|Async Game Complete| Kafka
+    GS1 -->|"Async Game Complete"| Kafka
+    GS2 -->|"Async Game Complete"| Kafka
 
     Kafka --> HistSvc
     HistSvc --> DB
@@ -133,7 +133,7 @@ sequenceDiagram
     C->>LB: Connect wss://game.chess-platform.com/ws?token=JWT
     LB->>GW: Forward TCP/TLS Connection
     GW->>GW: Authenticate JWT & Assign socket_id
-    C->>GW: Client sends "JoinGame(game_id)"
+    C->>GW: Client sends JoinGame(game_id)
     GW->>Reg: HGET game_registry:{game_id} -> server_ip:port
     Reg-->>GW: Returns GS_Node_2 IP
     GW->>GS: Establish internal gRPC stream / NATS sub to GS_Node_2
@@ -224,19 +224,19 @@ Clients **never dictate clock time remaining**. All clocks are computed authorit
 
 #### Clock Calculation Formula:
 
-When Player $P$ plays move $M_i$ at client timestamp $T_{client\_send}$, received by server at $T_{server\_recv}$:
+When Player $P$ plays move $M_i$ at client timestamp $T_{\text{client\_send}}$, received by server at $T_{\text{server\_recv}}$:
 
 $$\text{Estimated RTT} = \text{Client-Server Ping RTT}$$
 
 $$\text{Network One-Way Delay (OWD)} = \frac{\text{RTT}}{2}$$
 
-$$\text{Client Lag} = \max\left(0, T_{server\_recv} - T_{last\_move\_server\_time} - \text{Client Clock Elapsed}\right)$$
+$$\text{Client Lag} = \max\left(0, T_{\text{server\_recv}} - T_{\text{last\_move\_server\_time}} - \text{Client Clock Elapsed}\right)$$
 
 To prevent client lag spoofing (e.g., artificially delaying packets to gain free thinking time), lag compensation is capped:
 
 $$\text{Applied Lag Compensation} = \min\left(\text{Client Lag}, \text{MAX\_LAG\_COMPENSATION}\right) \quad (\text{where } \text{MAX\_LAG\_COMPENSATION} = 250\text{ms})$$
 
-$$\text{Time Spent on Move} = (T_{server\_recv} - T_{last\_move\_server\_time}) - \text{Applied Lag Compensation}$$
+$$\text{Time Spent on Move} = (T_{\text{server\_recv}} - T_{\text{last\_move\_server\_time}}) - \text{Applied Lag Compensation}$$
 
 $$\text{Clock}_{\text{remaining}}(P) = \text{Clock}_{\text{previous}}(P) - \text{Time Spent on Move} + \text{Increment}$$
 
@@ -411,21 +411,21 @@ Matchmaking uses isolated **Redis Sorted Sets (ZSET)** per time control configur
 
 ```mermaid
 flowchart LR
-    subgraph Matchmaking Worker Pool
+    subgraph WorkerPool["Matchmaking Worker Pool"]
         W1["Worker 1 (Blitz Pool)"]
         W2["Worker 2 (Bullet Pool)"]
     end
 
-    subgraph Redis Sorted Set Pool
-        RedisZSet["ZSET: matchmaking:blitz_3+0\nScore = ELO Rating"]
+    subgraph RedisPool["Redis Sorted Set Pool"]
+        RedisZSet["ZSET: matchmaking:blitz_3+0<br/>Score = ELO Rating"]
     end
 
-    ClientA["Client A (ELO 1500)\nWaiting: 0s"] -->|ZADD Score: 1500| RedisZSet
-    ClientB["Client B (ELO 1540)\nWaiting: 4s"] -->|ZADD Score: 1540| RedisZSet
+    ClientA["Client A (ELO 1500)<br/>Waiting: 0s"] -->|"ZADD Score: 1500"| RedisZSet
+    ClientB["Client B (ELO 1540)<br/>Waiting: 4s"] -->|"ZADD Score: 1540"| RedisZSet
     
-    W1 -->|Lua Script: Match Candidate Search| RedisZSet
-    RedisZSet -->|Atomic Pop Pair (A, B)| W1
-    W1 -->|Create Game Instance| GameServer["Assign Game Engine Node"]
+    W1 -->|"Lua Script: Match Candidate Search"| RedisZSet
+    RedisZSet -->|"Atomic Pop Pair (A, B)"| W1
+    W1 -->|"Create Game Instance"| GameServer["Assign Game Engine Node"]
 ```
 
 ### 5.2 Dynamic Range Expansion Logic
@@ -511,7 +511,7 @@ To scale the WebSocket Gateway tier to 1,000,000+ simultaneous persistent connec
 |  1. File Descriptors Limit (/etc/security/limits.conf):               |
 |     * soft nofile 2097152                                             |
 |     * hard nofile 2097152                                             |
-|                                                                       |
+|     
 |  2. Network Kernel Tuning (/etc/sysctl.conf):                         |
 |     net.ipv4.tcp_max_syn_backlog = 65535                              |
 |     net.core.somaxconn = 65535                                        |
